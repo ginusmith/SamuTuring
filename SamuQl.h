@@ -327,7 +327,7 @@ public:
                 table_[i][prg] = 0.0;
             }
 
-        for ( int prg {99}; prg<105; ++prg )
+        for ( int prg {100}; prg<105; ++prg )
             for ( int i {0}; i<5*2*3; ++i ) {
                 table_[i][prg] = 0.0;
             }
@@ -904,9 +904,8 @@ public:
             }
 
             action2 = argmax_ap_f ( prg );
-            if ( action2 != -1 && action2 != 99) {
+            if(action2 != -1)                    
                 action = exec ( action2, center_of_tape, noc );
-            }
 
         }
 
@@ -936,7 +935,7 @@ public:
 #endif
     double alpha ( int n ) {
 
-        return ( ( double ) n ) / ( ( ( double ) n ) + 100.0 );
+        return 1.0/ ( ( ( double ) n ) + 100.0 );
 
     }
 
@@ -1156,130 +1155,22 @@ public:
 
     }
 
-    std::string multTos ( std::map<int, std::vector<int>> &machines ) {
-        std::stringstream ss;
-        int m = 1;
-        for ( auto& mm : machines ) {
-            m *= mm.second.size();
-            ss << "*" << mm.second.size();
-
-        }
-        ss << "=" << m;
-
-        return ss.str();
-    }
-    
-    int frek(int from, int to)
-    {
-        for ( auto& rule : rules ) {
-            if(rule.first.first == from && rule.first.second == to) 
-	      return rule.second;
-        }
-        
-        return 0;
-      
-    }
-    
-    std::string printMachines() {
-
-        std::stringstream ss;
-
-        std::map<int, std::vector<int>> machines;
-        std::map<int, int> maxs;
-
-        for ( auto& rule : rules ) {
-            if ( rule.second > 10*N_e && rule.first.first >= 0 ) {
-                machines[rule.first.first].push_back ( rule.first.second );
-		if(rule.second > maxs[rule.first.first])
-		  maxs[rule.first.first] = rule.second;
-            }
-        }
-
-        ss << multTos ( machines );
-        for ( auto& mm : machines ) {
-            //int max = (4*maxs[mm.first])/5;
-            int max = maxs[mm.first]/10;
-	    
-	    ss << "[" << max << "]";
-	    
-            mm.second.erase(std::remove_if (
-                mm.second.begin(), mm.second.end(),
-            [=] ( int & n ) {
-                return frek(mm.first, n) < max;
-            } ), mm.second.end() );
-	    	    
-        }
-        ss << multTos ( machines );
-
-        std::vector<std::vector<std::pair<int, int>>> oldtms;
-        std::vector<std::vector<std::pair<int, int>>> newtms;
-
-        for ( auto& m : machines ) {
-
-            newtms.clear();
-
-            if ( oldtms.size() > 0 )
-                for ( auto& mm : oldtms ) {
-
-                    for ( auto& tos : m.second ) {
-
-                        std::vector<std::pair<int, int>> mmm = mm;
-                        std::pair<int, int> p = std::make_pair ( m.first, tos );
-                        mmm.push_back ( p );
-                        newtms.push_back ( mmm );
-
-
-                    }
-
-                }
-            else {
-
-                for ( auto& tos : m.second ) {
-
-                    std::vector<std::pair<int, int>> mm;
-                    std::pair<int, int> p = std::make_pair ( m.first, tos );
-                    mm.push_back ( p );
-                    newtms.push_back ( mm );
-
-                }
-
-            }
-
-            oldtms = newtms;
-
-        }
-
-        ss << "Possible TMs:" << oldtms.size() << std::endl;
-
-        for ( auto& mm : oldtms ) {
-
-            ss << "***TM: " << mm.size();
-            for ( auto& mmm : mm ) {
-
-                ss << ", " << mmm.first << ", " << mmm.second;
-
-            }
-            ss << std::endl;
-
-        }
-
-        return ss.str();
-
-    }
-
     std::string printSortedRules() {
 
-        std::vector<std::pair<std::pair<int, int>, int>> tmp;
+        //std::vector<std::pair<std::pair<int, int>, int>> tmp;
+	std::vector<std::tuple<int, int, int>> tmp;
 
         for ( auto& rule : rules ) {
-            std::pair<std::pair<int, int>, int> p {{rule.first.first, rule.first.second}, rule.second};
+            //std::pair<std::pair<int, int>, int> p {{rule.first.first, rule.first.second}, rule.second};
+	    auto p = std::make_tuple(rule.first.first, rule.first.second, rule.second);
             tmp.push_back ( p );
         }
 
         std::sort (
             std::begin ( tmp ), std::end ( tmp ),
         [=] ( auto&& t1, auto&&t2 ) {
-            return t1.second > t2.second;
+            //return t1.second > t2.second;
+	  return std::get<2>(t1) > std::get<2>(t2);
         }
         );
 
@@ -1289,9 +1180,9 @@ public:
 
         for ( auto& rule : tmp ) {
             //ss << ", " <<rule.first.first <<","  << rule.first.second << "(" << rule.second<< ") ";
-            ss << ", " <<rule.first.first <<", "  << rule.first.second;
-
-        }
+	//ss << ", " <<rule.first.first <<", "  << rule.first.second;
+	  ss << ", " << std::get<0>(rule) <<", "<< std::get<1>(rule) <<"(" << std::get<2>(rule) << ")";
+	}
         return ss.str();
 
     }
@@ -1366,15 +1257,15 @@ private:
         }
     }
 
-    int N_e = 0;
+    int N_e = 3;
 
     QL ( const QL & );
     QL & operator= ( const QL & );
 
 #ifdef Q_LOOKUP_TABLE
-    double gamma = .5;
+    double gamma = .2;
 #else
-    double gamma = .5;
+    double gamma = .2;
 #endif
 
 #ifdef Q_LOOKUP_TABLE
@@ -1413,8 +1304,8 @@ private:
     double min_reward {-3.1};
     */
 
-    double max_reward {0.0};
-    double min_reward {-1000000000.00};
+    double max_reward { 0.00};
+    double min_reward {-10000.00};
 
 #ifdef PLACE_VALUE
     double prev_image [10*3];
